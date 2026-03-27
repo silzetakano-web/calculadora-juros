@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calculadora de Juros Compostos — Silze Takano</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --petroleo: #404D5D;
+    --petroleo-light: #5A6B7D;
+    --petroleo-dark: #2C3844;
+    --creme: #F5F0E8;
+    --creme-dark: #E8E2D6;
+    --dourado: #C9A84C;
+    --dourado-light: #DFC06E;
+    --dourado-dark: #A8872E;
+    --branco: #FFFFFF;
+    --txt-muted: #8A9BAD;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--petroleo-dark);
+    color: var(--creme);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Background texture */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 50% at 20% 10%, rgba(201,168,76,0.06) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 80% 90%, rgba(64,77,93,0.8) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wrap {
+    position: relative;
+    z-index: 1;
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 0 20px 60px;
+  }
+
+  /* HEADER */
+  header {
+    padding: 40px 0 32px;
+    border-bottom: 1px solid rgba(201,168,76,0.2);
+    margin-bottom: 36px;
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .brand-dot {
+    width: 6px;
+    height: 6px;
+    background: var(--dourado);
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .brand-name {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--dourado);
+  }
+
+  h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(28px, 6vw, 40px);
+    font-weight: 700;
+    line-height: 1.15;
+    color: var(--creme);
+    margin-bottom: 10px;
+  }
+
+  h1 em {
+    font-style: italic;
+    color: var(--dourado);
+  }
+
+  .subtitle {
+    font-size: 14px;
+    color: var(--txt-muted);
+    font-weight: 300;
+    line-height: 1.6;
+  }
+
+  /* TABS */
+  .tabs {
+    display: flex;
+    gap: 0;
+    background: rgba(255,255,255,0.04);
+    border-radius: 10px;
+    padding: 4px;
+    margin-bottom: 28px;
+    border: 1px solid rgba(201,168,76,0.15);
+  }
+
+  .tab-btn {
+    flex: 1;
+    padding: 9px 8px;
+    font-size: 12px;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 500;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: var(--txt-muted);
+    border-radius: 7px;
+    transition: all .2s;
+    letter-spacing: 0.2px;
+  }
+
+  .tab-btn.active {
+    background: var(--dourado);
+    color: var(--petroleo-dark);
+  }
+
+  .tab-btn:not(.active):hover { color: var(--creme); }
+
+  /* CONTROLS */
+  .controls {
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+    margin-bottom: 32px;
+  }
+
+  .ctrl-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .ctrl-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+
+  .ctrl-label {
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--txt-muted);
+  }
+
+  .ctrl-value {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--dourado);
+  }
+
+  input[type=range] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 2px;
+    background: rgba(201,168,76,0.2);
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+  }
+
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--dourado);
+    border: 3px solid var(--petroleo-dark);
+    box-shadow: 0 0 0 1px var(--dourado);
+    cursor: pointer;
+    transition: transform .15s;
+  }
+
+  input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.15); }
+  input[type=range]::-moz-range-thumb {
+    width: 20px; height: 20px; border-radius: 50%;
+    background: var(--dourado); border: 3px solid var(--petroleo-dark);
+    cursor: pointer;
+  }
+
+  /* RESULT CARDS */
+  .result-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 28px;
+  }
+
+  .rcard {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(201,168,76,0.12);
+    border-radius: 12px;
+    padding: 16px 12px;
+    text-align: center;
+    transition: border-color .2s;
+  }
+
+  .rcard:hover { border-color: rgba(201,168,76,0.3); }
+
+  .rcard.highlight {
+    background: rgba(201,168,76,0.08);
+    border-color: rgba(201,168,76,0.35);
+  }
+
+  .rcard-label {
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--txt-muted);
+    margin-bottom: 8px;
+    font-weight: 500;
+  }
+
+  .rcard-value {
+    font-family: 'Playfair Display', serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--creme);
+    line-height: 1;
+  }
+
+  .rcard.highlight .rcard-value { color: var(--dourado); }
+
+  .rcard-sub {
+    font-size: 10px;
+    color: var(--txt-muted);
+    margin-top: 6px;
+  }
+
+  /* CHART AREA */
+  .chart-wrap {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(201,168,76,0.1);
+    border-radius: 14px;
+    padding: 20px 16px 14px;
+    margin-bottom: 20px;
+  }
+
+  .chart-title {
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--txt-muted);
+    margin-bottom: 14px;
+    font-weight: 500;
+  }
+
+  .chart-canvas-wrap {
+    position: relative;
+    width: 100%;
+    height: 220px;
+  }
+
+  /* BARS (bola de neve tab) */
+  #bars-wrap { display: flex; flex-direction: column; gap: 7px; }
+
+  .bar-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .bar-yr {
+    font-size: 11px;
+    color: var(--txt-muted);
+    min-width: 52px;
+    text-align: right;
+    font-weight: 300;
+  }
+
+  .bar-track {
+    flex: 1;
+    height: 20px;
+    background: rgba(255,255,255,0.04);
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .bar-principal {
+    position: absolute; left: 0; top: 0; height: 100%;
+    background: var(--petroleo-light);
+    border-radius: 4px 0 0 4px;
+    transition: width .4s cubic-bezier(.4,0,.2,1);
+  }
+
+  .bar-juros {
+    position: absolute; top: 0; height: 100%;
+    background: var(--dourado);
+    border-radius: 0 4px 4px 0;
+    transition: left .4s cubic-bezier(.4,0,.2,1), width .4s cubic-bezier(.4,0,.2,1);
+  }
+
+  .bar-total {
+    font-size: 11px;
+    color: var(--creme);
+    min-width: 86px;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* CICLO TAB */
+  .ciclo-wrap { padding: 4px 0; }
+
+  .ciclo-step {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    margin-bottom: 0;
+  }
+
+  .ciclo-line {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-shrink: 0;
+  }
+
+  .ciclo-dot {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--dourado);
+    color: var(--petroleo-dark);
+    font-size: 13px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-family: 'Playfair Display', serif;
+  }
+
+  .ciclo-connector {
+    width: 1px;
+    flex: 1;
+    min-height: 24px;
+    background: rgba(201,168,76,0.25);
+    margin: 4px 0;
+  }
+
+  .ciclo-content {
+    padding: 4px 0 28px;
+    flex: 1;
+  }
+
+  .ciclo-content h3 {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--creme);
+    margin-bottom: 5px;
+  }
+
+  .ciclo-content p {
+    font-size: 13px;
+    color: var(--txt-muted);
+    line-height: 1.6;
+  }
+
+  .ciclo-content .num-hl {
+    color: var(--dourado);
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* INSIGHT BOX */
+  .insight {
+    background: rgba(201,168,76,0.07);
+    border: 1px solid rgba(201,168,76,0.2);
+    border-radius: 10px;
+    padding: 14px 16px;
+    font-size: 13px;
+    color: var(--txt-muted);
+    line-height: 1.65;
+  }
+
+  .insight strong { color: var(--creme); font-weight: 500; }
+
+  /* LEGEND */
+  .legend {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: var(--txt-muted);
+  }
+
+  .legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+
+  /* FOOTER */
+  footer {
+    margin-top: 48px;
+    padding-top: 24px;
+    border-top: 1px solid rgba(201,168,76,0.15);
+    text-align: center;
+  }
+
+  .footer-tagline {
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-size: 15px;
+    color: var(--dourado);
+    margin-bottom: 8px;
+  }
+
+  .footer-handle {
+    font-size: 12px;
+    color: var(--txt-muted);
+    letter-spacing: 1px;
+  }
+
+  /* Animations */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .wrap > * { animation: fadeUp .5s ease both; }
+  header { animation-delay: .05s; }
+  .tabs  { animation-delay: .1s; }
+  .controls { animation-delay: .15s; }
+  .result-grid { animation-delay: .2s; }
+  .chart-wrap { animation-delay: .25s; }
+
+  /* Tab content */
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  @media (max-width: 480px) {
+    .result-grid { grid-template-columns: 1fr 1fr; }
+    .rcard:last-child { grid-column: 1 / -1; }
+    .tabs { gap: 2px; }
+    .tab-btn { font-size: 11px; padding: 8px 4px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="brand">
+      <div class="brand-dot"></div>
+      <span class="brand-name">ST Inteligência Financeira</span>
+    </div>
+    <h1>A <em>oitava maravilha</em><br>do mundo</h1>
+    <p class="subtitle">Calcule o poder dos juros compostos — e veja quanto seu dinheiro pode multiplicar com o tempo.</p>
+  </header>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="setTab('bola',this)">Bola de neve</button>
+    <button class="tab-btn" onclick="setTab('simples',this)">Simples vs. Compostos</button>
+    <button class="tab-btn" onclick="setTab('ciclo',this)">Como funciona</button>
+  </div>
+
+  <div class="controls">
+    <div class="ctrl-group">
+      <div class="ctrl-header">
+        <span class="ctrl-label">Capital inicial</span>
+        <span class="ctrl-value" id="v-capital">R$ 1.000</span>
+      </div>
+      <input type="range" id="s-capital" min="500" max="100000" step="500" value="1000" oninput="update()">
+    </div>
+    <div class="ctrl-group">
+      <div class="ctrl-header">
+        <span class="ctrl-label">Taxa ao ano</span>
+        <span class="ctrl-value" id="v-taxa">10%</span>
+      </div>
+      <input type="range" id="s-taxa" min="2" max="25" step="1" value="10" oninput="update()">
+    </div>
+    <div class="ctrl-group">
+      <div class="ctrl-header">
+        <span class="ctrl-label">Período</span>
+        <span class="ctrl-value" id="v-anos">10 anos</span>
+      </div>
+      <input type="range" id="s-anos" min="1" max="40" step="1" value="10" oninput="update()">
+    </div>
+  </div>
+
+  <div class="result-grid">
+    <div class="rcard">
+      <div class="rcard-label">Você investiu</div>
+      <div class="rcard-value" id="r-principal">—</div>
+      <div class="rcard-sub">capital inicial</div>
+    </div>
+    <div class="rcard">
+      <div class="rcard-label">Rendeu em juros</div>
+      <div class="rcard-value" id="r-juros" style="color:var(--dourado)">—</div>
+      <div class="rcard-sub">juros sobre juros</div>
+    </div>
+    <div class="rcard highlight">
+      <div class="rcard-label">Total acumulado</div>
+      <div class="rcard-value" id="r-total">—</div>
+      <div class="rcard-sub" id="r-mult">—</div>
+    </div>
+  </div>
+
+  <!-- TAB: BOLA DE NEVE -->
+  <div class="tab-content active" id="tab-bola">
+    <div class="chart-wrap">
+      <div class="chart-title">Crescimento ano a ano</div>
+      <div class="legend">
+        <div class="legend-item"><div class="legend-dot" style="background:var(--petroleo-light)"></div>Seu capital</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--dourado)"></div>Juros acumulados</div>
+      </div>
+      <div id="bars-wrap"></div>
+    </div>
+    <div class="insight" id="insight-bola"></div>
+  </div>
+
+  <!-- TAB: SIMPLES VS COMPOSTOS -->
+  <div class="tab-content" id="tab-simples">
+    <div class="chart-wrap">
+      <div class="chart-title">Comparativo de crescimento</div>
+      <div class="legend">
+        <div class="legend-item"><div class="legend-dot" style="background:#5A6B7D"></div>Juros simples</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--dourado)"></div>Juros compostos</div>
+      </div>
+      <div class="chart-canvas-wrap">
+        <canvas id="cmpChart"></canvas>
+      </div>
+    </div>
+    <div class="result-grid" style="margin-bottom:16px">
+      <div class="rcard" style="grid-column:1">
+        <div class="rcard-label">Juros simples</div>
+        <div class="rcard-value" id="s-simples" style="color:var(--txt-muted)">—</div>
+        <div class="rcard-sub">sempre sobre o mesmo capital</div>
+      </div>
+      <div class="rcard highlight" style="grid-column:2/4">
+        <div class="rcard-label">Juros compostos</div>
+        <div class="rcard-value" id="s-comp">—</div>
+        <div class="rcard-sub" id="s-diff">—</div>
+      </div>
+    </div>
+    <div class="insight" id="insight-simples"></div>
+  </div>
+
+  <!-- TAB: CICLO -->
+  <div class="tab-content" id="tab-ciclo">
+    <div class="chart-wrap">
+      <div class="chart-title">O mecanismo dos juros compostos</div>
+      <div class="ciclo-wrap" id="ciclo-steps"></div>
+    </div>
+    <div class="insight">
+      Nos juros <strong>simples</strong>, os juros ficam de fora — você ganha sempre o mesmo valor. Nos juros <strong>compostos</strong>, os juros do ano 1 entram na base do ano 2, que entra na base do ano 3... Você passa a ganhar <strong>juros sobre os juros anteriores</strong>. É por isso que a curva é exponencial, não linear.
+    </div>
+  </div>
+
+  <footer>
+    <div class="footer-tagline">"A Silze simplifica e você multiplica."</div>
+    <div class="footer-handle">@silzetakano</div>
+  </footer>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+let cmpChart = null;
+let currentTab = 'bola';
+
+function fmt(v) {
+  v = Math.round(v);
+  if (v >= 1000000) return 'R$ ' + (v/1000000).toFixed(2).replace('.',',') + 'M';
+  return 'R$ ' + v.toLocaleString('pt-BR');
+}
+
+function fmtFull(v) {
+  return 'R$ ' + Math.round(v).toLocaleString('pt-BR');
+}
+
+function getVals() {
+  return {
+    cap: +document.getElementById('s-capital').value,
+    taxa: +document.getElementById('s-taxa').value / 100,
+    anos: +document.getElementById('s-anos').value
+  };
+}
+
+function update() {
+  const { cap, taxa, anos } = getVals();
+
+  document.getElementById('v-capital').textContent = fmtFull(cap);
+  document.getElementById('v-taxa').textContent = (taxa*100).toFixed(0) + '%';
+  document.getElementById('v-anos').textContent = anos + (anos === 1 ? ' ano' : ' anos');
+
+  const total = cap * Math.pow(1 + taxa, anos);
+  const juros = total - cap;
+  const mult = (total / cap).toFixed(1);
+
+  document.getElementById('r-principal').textContent = fmtFull(cap);
+  document.getElementById('r-juros').textContent = fmtFull(juros);
+  document.getElementById('r-total').textContent = fmt(total);
+  document.getElementById('r-mult').textContent = mult + '× o que você colocou';
+
+  updateBars(cap, taxa, anos, total);
+  updateCiclo(cap, taxa);
+  updateSimples(cap, taxa, anos, total);
+
+  const jurosPct = Math.round((juros / total) * 100);
+  document.getElementById('insight-bola').innerHTML =
+    `Em <strong>${anos} ${anos===1?'ano':'anos'}</strong>, <strong>${jurosPct}% do montante final são juros</strong> — dinheiro que não saiu do seu bolso. Você colocou ${fmtFull(cap)} e o tempo multiplicou por <strong>${mult}×</strong>. A barra dourada cresce porque os juros rendem sobre os juros anteriores.`;
+}
+
+function updateBars(cap, taxa, anos, maxVal) {
+  const wrap = document.getElementById('bars-wrap');
+  wrap.innerHTML = '';
+
+  const step = anos <= 10 ? 1 : anos <= 20 ? 2 : anos <= 30 ? 5 : 10;
+  const years = [];
+  for (let y = 0; y <= anos; y += step) years.push(y);
+  if (years[years.length-1] !== anos) years.push(anos);
+
+  years.forEach(y => {
+    const t = cap * Math.pow(1 + taxa, y);
+    const pPct = (cap / maxVal * 100).toFixed(1);
+    const jPct = ((t - cap) / maxVal * 100).toFixed(1);
+
+    const row = document.createElement('div');
+    row.className = 'bar-row';
+    row.innerHTML = `
+      <span class="bar-yr">${y === 0 ? 'início' : 'ano ' + y}</span>
+      <div class="bar-track">
+        <div class="bar-principal" style="width:${pPct}%"></div>
+        <div class="bar-juros" style="left:${pPct}%;width:${jPct}%"></div>
+      </div>
+      <span class="bar-total">${fmt(t)}</span>`;
+    wrap.appendChild(row);
+  });
+}
+
+function updateCiclo(cap, taxa) {
+  const j1 = cap * taxa;
+  const newcap = cap + j1;
+  const j2 = newcap * taxa;
+  const newcap2 = newcap + j2;
+
+  const steps = [
+    {
+      n: '1',
+      title: 'Você investe o capital',
+      body: `Você aplica <span class="num-hl">${fmtFull(cap)}</span> a uma taxa de <span class="num-hl">${(taxa*100).toFixed(0)}% ao ano</span>.`
+    },
+    {
+      n: '2',
+      title: 'Juros do ano 1',
+      body: `Ao final do primeiro ano, você recebe <span class="num-hl">${fmtFull(j1)}</span> em juros. Seu montante total: <span class="num-hl">${fmtFull(newcap)}</span>.`
+    },
+    {
+      n: '3',
+      title: 'Os juros entram na base',
+      body: `No ano seguinte, os <strong>juros do ano 1 fazem parte do capital</strong>. Você agora tem <span class="num-hl">${fmtFull(newcap)}</span> rendendo — não mais ${fmtFull(cap)}.`
+    },
+    {
+      n: '4',
+      title: 'Juros do ano 2 — maiores',
+      body: `Os juros do ano 2 são <span class="num-hl">${fmtFull(j2)}</span> — mais do que no ano 1, porque a base cresceu. Montante: <span class="num-hl">${fmtFull(newcap2)}</span>.`
+    },
+    {
+      n: '∞',
+      title: 'E assim por diante…',
+      body: `A cada ano o montante cresce, a base cresce, os juros crescem. A curva não é uma reta — ela <strong>explode de forma exponencial</strong>.`,
+      last: true
+    }
+  ];
+
+  const wrap = document.getElementById('ciclo-steps');
+  wrap.innerHTML = steps.map((s, i) => `
+    <div class="ciclo-step">
+      <div class="ciclo-line">
+        <div class="ciclo-dot">${s.n}</div>
+        ${!s.last ? '<div class="ciclo-connector"></div>' : ''}
+      </div>
+      <div class="ciclo-content" ${s.last ? 'style="padding-bottom:4px"' : ''}>
+        <h3>${s.title}</h3>
+        <p>${s.body}</p>
+      </div>
+    </div>`).join('');
+}
+
+function updateSimples(cap, taxa, anos, compTotal) {
+  const simpTotal = cap + cap * taxa * anos;
+  const diff = compTotal - simpTotal;
+
+  document.getElementById('s-simples').textContent = fmt(simpTotal);
+  document.getElementById('s-comp').textContent = fmt(compTotal);
+  document.getElementById('s-diff').textContent = `+ ${fmt(diff)} a mais que o simples`;
+
+  document.getElementById('insight-simples').innerHTML =
+    `Com juros <strong>simples</strong>, você recebe sempre <strong>${fmtFull(cap*taxa)}/ano</strong> — os mesmos, para sempre. Com juros <strong>compostos</strong>, cada ano rende mais que o anterior. A diferença após ${anos} anos é <strong>${fmt(diff)}</strong>. Esse é o dinheiro que os juros compostos geram sozinhos.`;
+
+  updateCmpChart(cap, taxa, anos);
+}
+
+function updateCmpChart(cap, taxa, anos) {
+  const labels = [], simpData = [], compData = [];
+  const step = anos <= 20 ? 1 : 2;
+  for (let y = 0; y <= anos; y += step) {
+    labels.push(y === 0 ? 'início' : y + 'a');
+    simpData.push(Math.round(cap + cap * taxa * y));
+    compData.push(Math.round(cap * Math.pow(1+taxa, y)));
+  }
+
+  if (!cmpChart) {
+    const ctx = document.getElementById('cmpChart').getContext('2d');
+    cmpChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'Simples',
+            data: simpData,
+            borderColor: '#5A6B7D',
+            backgroundColor: 'rgba(90,107,125,0.05)',
+            borderWidth: 2,
+            pointRadius: 0,
+            tension: 0,
+            fill: false
+          },
+          {
+            label: 'Compostos',
+            data: compData,
+            borderColor: '#C9A84C',
+            backgroundColor: 'rgba(201,168,76,0.07)',
+            borderWidth: 2.5,
+            pointRadius: 0,
+            tension: 0.4,
+            fill: false
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: '#1e2830',
+            titleColor: '#F5F0E8',
+            bodyColor: '#8A9BAD',
+            borderColor: 'rgba(201,168,76,0.3)',
+            borderWidth: 1,
+            padding: 10,
+            callbacks: {
+              label: c => c.dataset.label + ': R$ ' + c.raw.toLocaleString('pt-BR')
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid: { color: 'rgba(255,255,255,0.04)' },
+            ticks: { color: '#5A6B7D', font: { size: 11, family: 'DM Sans' }, maxRotation: 0, autoSkip: true, maxTicksLimit: 8 }
+          },
+          y: {
+            grid: { color: 'rgba(255,255,255,0.04)' },
+            ticks: {
+              color: '#5A6B7D',
+              font: { size: 11, family: 'DM Sans' },
+              callback: v => {
+                if (v >= 1000000) return 'R$' + (v/1000000).toFixed(1) + 'M';
+                if (v >= 1000) return 'R$' + (v/1000).toFixed(0) + 'k';
+                return 'R$' + v;
+              }
+            }
+          }
+        }
+      }
+    });
+  } else {
+    cmpChart.data.labels = labels;
+    cmpChart.data.datasets[0].data = simpData;
+    cmpChart.data.datasets[1].data = compData;
+    cmpChart.update('none');
+  }
+}
+
+function setTab(name, btn) {
+  currentTab = name;
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+update();
+</script>
+</body>
+</html>
